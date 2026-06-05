@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Environments
+.venv/
+venv/
+.env
+
+# Data caches — code/docs/logs only. 원자료(특히 TS2000 학교 라이선스)는 절대 커밋 금지.
+**/data/raw/*
+**/data/interim/*
+**/data/processed/*
+!**/data/raw/.gitkeep
+!**/data/interim/.gitkeep
+!**/data/processed/.gitkeep
+# 8_etf / l1 은 flat data/ 폴더 사용 → 캐시 CSV ignore
+8_etf_tactical_allocation/data/*.csv
+l1_etf_cross_section/data/*.csv
+
+# Generated reports
+**/reports/generated/*
+!**/reports/generated/.gitkeep
+
+# Generated return matrices (regenerable data-like outputs)
+**/outputs/*_returns_*.csv
+
+# OS
+.DS_Store
+
+# Large / binary
+*.zip
+*.parquet
+*.pkl
+*.feather
+*.h5
