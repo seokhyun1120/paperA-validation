@@ -1,0 +1,4 @@
+# 원자료는 커밋 금지 (repo 규칙) — stage1로 재생성 가능. 파생 sharpe CSV만 커밋.
+data/osap_LS_v200.csv.gz
+data/SignalDoc.csv
+run_*.log

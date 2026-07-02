@@ -19,6 +19,7 @@ has conditional sd ~ 1. M_ENV (>1) is the validity/power lever: larger = safer
 detectable delta. Re-run with YOUR M_ENV, scale rule, grid, and OSAP data.
 ====================================================================
 """
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -30,7 +31,7 @@ N_GRID     = np.array([60, 120, 240, 360])      # post-registration months to ta
 M_ENV      = 1.3                      # second-moment envelope multiplier (>1)
 C_GRID     = np.array([0.0, 0.05, 0.10, 0.15, 0.20, 0.30, 0.40])  # dimensionless bets c_k
 W          = np.ones(len(C_GRID)) / len(C_GRID)  # mixture weights; c_1=0 keeps E>=w_1>0
-NOISE      = "gaussian"               # "gaussian" or "t5" (finite-var fat tail, unit-var)
+NOISE      = os.environ.get("NOISE", "gaussian")  # "gaussian" or "t5" (finite-var fat tail, unit-var)
 N_SIM      = 10_000                   # MC paths (raise to ~50k for a publication figure)
 DELTA_GRID = np.linspace(0.0, 0.8, 21)           # standardized effect sizes searched
 SEED       = 0
@@ -110,13 +111,19 @@ for n, o, c in zip(N_GRID, oracle, catoni):
 
 # --------------------------- OSAP overlay ---------------------------
 def load_osap_monthly_sharpe():
-    """REPLACE with your pinned OSAP v2.0.0 release.
-    Return (n_j, monthly_sharpe_j): per-factor post-registration months and the
-    realized MONTHLY Sharpe of the standardized score over that window.
-    For now returns an ILLUSTRATIVE placeholder (annual SR ~ 0.4 +/- 0.25)."""
-    n_j = rng.integers(60, 300, size=J)
-    ann = rng.normal(0.40, 0.25, size=J).clip(-0.2, 1.5)     # McLean-Pontiff-ish annual SR
-    return n_j, ann / np.sqrt(12)
+    """OSAP data release 2025.10 (v2.00), 원논문 구현(op) LS 포트폴리오.
+    등록시점 A_j = 출판연도 12월 말; post-registration = Year+1년 1월부터.
+    Return (n_j, monthly_sharpe_j): predictor별 post-registration 유효 월 수와
+    그 윈도우의 실현 MONTHLY Sharpe (stage2_postpub_sharpe.py가 생성)."""
+    import csv
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                        "data", "osap_postpub_sharpe.csv")
+    with open(path, newline="") as f:
+        rows = list(csv.DictReader(f))
+    assert len(rows) == J, f"expected J={J} predictors, got {len(rows)}"
+    n_j  = np.array([int(r["n_j"]) for r in rows])
+    sh_m = np.array([float(r["sharpe_m"]) for r in rows])
+    return n_j, sh_m
 
 
 # ------------------------------ plot -------------------------------
@@ -128,7 +135,7 @@ ax.plot(N_GRID, catoni * np.sqrt(12), "o-", lw=2,
         label=f"Catoni-mixture frontier (M_env={M_ENV}, {NOISE}) — honest")
 n_j, sh_j = load_osap_monthly_sharpe()
 ax.scatter(n_j, sh_j * np.sqrt(12), s=14, alpha=0.35, color="crimson",
-           label="OSAP factors (PLACEHOLDER — swap in real data)")
+           label="OSAP factors (v2.00 op LS, post-publication)")
 ax.set_xlabel("post-registration sample length n (months)")
 ax.set_ylabel("minimum detectable Sharpe (annualized)")
 ax.set_title(f"Detectability frontier   (J={J}, α={ALPHA}, power={1-BETA:.0%})")
@@ -136,8 +143,9 @@ ax.set_ylim(0, None)
 ax.legend(fontsize=8)
 ax.grid(alpha=0.3)
 fig.tight_layout()
-fig.savefig("/mnt/user-data/outputs/frontier.png", dpi=140)
+FIG_NAME = "frontier.png" if NOISE == "gaussian" else f"frontier_{NOISE}.png"
+fig.savefig(os.path.join(os.path.dirname(os.path.abspath(__file__)), FIG_NAME), dpi=140)
 
 below = (sh_j <= np.interp(n_j, N_GRID, catoni)).mean()
-print(f"\nsaved -> frontier.png")
-print(f"placeholder: {below:.0%} of factors fall BELOW the Catoni frontier (undetectable)")
+print(f"\nsaved -> {FIG_NAME}")
+print(f"OSAP v2.00: {below:.0%} of factors fall BELOW the Catoni frontier (undetectable)")
