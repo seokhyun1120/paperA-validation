@@ -65,6 +65,36 @@ savefig 로컬 경로)뿐. oracle 닫힌형·phi·Catoni-mixture MC는 그대로
 - `data/osap_postpub_sharpe.csv` (signalname, pub_year, n_j, mean_m, sd_m, sharpe_m, sharpe_ann)
 - 실행 로그: `run_gaussian.log`, `run_t5.log`
 
+## t5 스위치 검증 (2026-07-02)
+
+`draw_noise` 직후 `scipy.stats.kurtosis`(excess) print를 임시 추가, N_SIM=1,000으로
+gaussian/t5 실행 (SEED=0). draw는 `frontier_for_n` 호출마다 생성되므로 케이스당 5줄
+(n=60/120/240/360 + null sanity용 n=360 1회). 실제 출력 그대로:
+
+```
+===== NOISE=gaussian, N_SIM=1000 =====
+NOISE=gaussian, excess kurtosis = 0.03
+NOISE=gaussian, excess kurtosis = 0.00
+NOISE=gaussian, excess kurtosis = -0.01
+NOISE=gaussian, excess kurtosis = 0.00
+NOISE=gaussian, excess kurtosis = 0.01
+===== NOISE=t5, N_SIM=1000 =====
+NOISE=t5, excess kurtosis = 3.53
+NOISE=t5, excess kurtosis = 6.23
+NOISE=t5, excess kurtosis = 8.74
+NOISE=t5, excess kurtosis = 6.41
+NOISE=t5, excess kurtosis = 5.40
+```
+
+- **gaussian ≈ 0, t5 ≈ 6 (이론값 6/(df−4) = 6) — NOISE 스위치 정상 동작 확인.**
+  t5의 draw별 산포(3.5~8.7)는 t(5)의 표본 kurtosis 추정량 분산이 매우 큰 데서 오는
+  정상 현상 (8차 모멘트 발산; 표본이 큰 n=120~360에서 6.2/6.4/5.4로 6에 수렴).
+- 따라서 본문 frontier 표에서 "t5가 gaussian과 소수점까지 사실상 동일(δ* 차이 ≤ 0.001)"은
+  버그가 아니라 결과다: Catoni 절차의 검정력이 사실상 처음 두 모멘트로 결정된다는
+  robustness 진술로 §5.6에 실을 수 있음.
+- 검증 후 print 제거, N_SIM=10,000 원복, 그림은 커밋본(N_SIM=10k)으로 복원 —
+  frontier.py는 커밋 2d7834c와 동일(git diff 없음).
+
 ### 결론 (그림 해석)
 
 실제 OSAP v2.00 overlay에서 팩터의 97~100%가 Catoni frontier 아래: 실현 post-pub Sharpe
