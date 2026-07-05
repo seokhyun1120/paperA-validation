@@ -272,3 +272,7 @@ Stage 3의 δ* 차이 ≤0.001 근거). `sim_results/E2.parquet`, `sim_E2_power.
   보고 — 이론 스코프 확인 대기, 코드/freeze/normalization 점검 완료)**. E3·E5는
   측정 실험으로 완료.
 - frontier.py 무수정 유지 (커널은 import, 회귀 테스트 bit-exact).
+- 참고: `sim_results/*.parquet`와 `run_simE*.log`는 repo .gitignore 정책
+  (*.parquet, run_*.log — 재생성 가능 산출물 커밋 금지)에 따라 비추적. 셀별
+  SEED 체계 + 엔진 커밋(9d091ea) 고정이므로 `python3 -m sim.run_E{1..5}`로
+  bit-동일 재생성 가능.
