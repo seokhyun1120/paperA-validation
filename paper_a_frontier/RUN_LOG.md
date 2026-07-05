@@ -101,3 +101,60 @@ NOISE=t5, excess kurtosis = 5.40
 (median 연 0.26)로는 J=212, α=0.05, power 50% 설정에서 30년 표본으로도 대부분 검출 불가.
 placeholder(연 SR 0.4±0.25 가정)보다 실제 데이터가 더 낮은 Sharpe를 보여 논문 내러티브
 ("Day-1 detectability는 현실적으로 거의 불가능")가 오히려 강화됨.
+
+## Stage 4 — envelope 진단 (2026-07-05, `stage4_envelope_check.py`)
+
+각 팩터의 **pre-publication 데이터만** 사용 (A_j = Year 12월 말 이전). v_{t-1} = 직전
+36개월 trailing sd (ddof=1, 최소 24개월), v_min = 자기 pre-pub trailing-sd 시계열의
+하위 5% 분위수 (팩터별 floor, lookahead 없음). Y_t = ret_t / max(v_{t-1}, v_min).
+
+- 212개 팩터 전부 block mean(Y²) 산출 가능 (pre-pub 표본 부족 제외 0).
+- block mean(Y²) 분위수: 10% 1.126 / 25% 1.181 / 50% 1.258 / 75% 1.376 /
+  90% 1.510 / 95% 1.788 / 99% 2.118.
+- coverage (기준 "mean(Y²) ≤ m²인 팩터 ≥ 90%"):
+  m=1.3 → **93.9%** (199/212) / m=1.5 → 99.1% / m=1.7 → 100.0%.
+- **채택 m_env = 1.3 (최소 후보가 기준 충족). 기존 frontier의 M_ENV=1.3과 동일 →
+  frontier 재실행 불필요.** 상세: `data/stage4_envelope_check.csv`, `run_stage4.log`.
+
+## Stage 5 — null sanity gate (2026-07-05, `stage5_null_sanity.py`)
+
+N_SIM=100,000, n=360, δ=0. e-process 로직은 frontier.py 커밋 2d7834c와 동일
+(파라미터 하드코딩, 메모리용 배치 처리만 추가). 기준: crossing rate ≤ 0.000381
+(= α/J + 3×MC 표준오차).
+
+- gaussian: **0/100,000 = 0.000000 → PASS**
+- t5:       **0/100,000 = 0.000000 → PASS**
+
+## Stage 6 — grid 확장 + margin 산출 (2026-07-05)
+
+### Grid 확장 (frontier.py: DELTA_GRID 상한 0.8 → 1.2, 간격 0.04 유지)
+
+허용 변경(탐색 grid 상한)만 수정: `np.linspace(0.0, 0.8, 21)` → `np.linspace(0.0,
+1.2, 31)`. 기존 grid점이 보존되고 CRN 추첨 순서 불변이라 n=120/240/360 값은
+정의상 동일해야 하며, 실제로도 동일 확인. N_SIM=10,000, SEED=0.
+
+| n (mo) | oracle δ*_ann | Catoni δ*_ann (gaussian) | Catoni δ*_ann (t5) |
+|-------:|--------------:|-------------------------:|-------------------:|
+|     60 |          2.35 | **2.86** (신규, δ*=0.826) | 2.86 (δ*=0.825)    |
+|    120 |          1.66 | 1.84 (불변)              | 1.84               |
+|    240 |          1.18 | 1.28 (불변)              | 1.28               |
+|    360 |          0.96 | 1.04 (불변)              | 1.04               |
+
+- 기존 세 값(1.84/1.28/1.04) 변동 없음 → STOP 조건 미해당.
+- t5 vs gaussian δ* 차이 ≤ 0.001 — Stage 3 robustness 결론 유지.
+- frontier.py 자체 below% 출력 99%는 209/212 = 98.6%의 소수점 반올림
+  (n=60이 채워지면서 기존 92% 표시의 NaN 보간 문제 해소). 수동 검산으로
+  209/212 확인, frontier 위 3개 = AnalystRevision, AnnouncementReturn, DivYieldST.
+- frontier.png / frontier_t5.png 갱신 (n=60 점 포함).
+
+### Margin 산출 (`stage6_margin.py`, `data/osap_postpub_sharpe.csv` 컬럼 추가)
+
+- 추가 컬럼: `frontier_at_nj` (60≤n_j≤360 선형 보간; n_j>360은 √n 스케일 외삽
+  frontier(360)×√(360/n_j); n_j<60도 동일 방식 위쪽 외삽 — 해당 팩터는 전부
+  censored), `margin` (= sharpe_ann − frontier_at_nj), `censored` (= n_j < 120).
+- **censored = 13개** (Activism1/2, CBOperProf, ConvDebt, Governance, OperProfRD,
+  PatentsRD, ReturnSkew, ReturnSkew3F, TrendFactor, dCPVolSpread, dVolCall,
+  dVolPut) — right-censored 케이스로 below/fail 집계에서 제외.
+- **matured 199개 margin 분위수 (연율)**: 10% −1.587 / 25% −1.365 / **50% −1.082** /
+  **75% −0.802** / 90% −0.568.
+- 예비 검산치(median ≈ −1.08, Q3 ≈ −0.80, frontier 위 3개)와 일치 — 이상 없음.

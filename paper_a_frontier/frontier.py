@@ -33,7 +33,7 @@ C_GRID     = np.array([0.0, 0.05, 0.10, 0.15, 0.20, 0.30, 0.40])  # dimensionles
 W          = np.ones(len(C_GRID)) / len(C_GRID)  # mixture weights; c_1=0 keeps E>=w_1>0
 NOISE      = os.environ.get("NOISE", "gaussian")  # "gaussian" or "t5" (finite-var fat tail, unit-var)
 N_SIM      = 10_000                   # MC paths (raise to ~50k for a publication figure)
-DELTA_GRID = np.linspace(0.0, 0.8, 21)           # standardized effect sizes searched
+DELTA_GRID = np.linspace(0.0, 1.2, 31)           # standardized effect sizes searched
 SEED       = 0
 # -------------------------------------------------------------------------------
 
