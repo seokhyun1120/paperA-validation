@@ -1,0 +1,12 @@
+===== NOISE=gaussian, N_SIM=1000 =====
+NOISE=gaussian, excess kurtosis = 0.03
+NOISE=gaussian, excess kurtosis = 0.00
+NOISE=gaussian, excess kurtosis = -0.01
+NOISE=gaussian, excess kurtosis = 0.00
+NOISE=gaussian, excess kurtosis = 0.01
+===== NOISE=t5, N_SIM=1000 =====
+NOISE=t5, excess kurtosis = 3.53
+NOISE=t5, excess kurtosis = 6.23
+NOISE=t5, excess kurtosis = 8.74
+NOISE=t5, excess kurtosis = 6.41
+NOISE=t5, excess kurtosis = 5.40
