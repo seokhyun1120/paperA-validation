@@ -377,8 +377,29 @@ all-null, E1 searcher 재사용, J_budget=20, γ=1/20, α ∈ {0.2, 0.5}
   확인 — E1의 SupFDR=0이 "발견이 원천 불가능해서"가 아니라 경계·예산 규율의
   결과임을 보여주는 메커니즘 체크. 전 셀 SupFDR ≪ α+3SE로 **PASS**.
 - 발견 0인 셀 3개(α=0.2)는 지침대로 α 추가 상향 없이 그대로 보고.
-- Catoni+e-BH의 보수성으로 실현 SupFDR이 명목 α보다 훨씬 낮음 (α=0.5에서
-  ~0.2%) — validity 마진이 큰 영역에서 작동함을 함께 기록. `sim_results/R1.parquet`.
+- 실현 SupFDR이 명목 α보다 훨씬 낮음 (α=0.5에서 ~0.2%). **이 보수성의 귀속은
+  R1b로 분해**: e-BH 집계층은 최악 null e-값에서 사실상 타이트하므로, R1의 큰
+  마진은 Catoni e-process 층(null crossing이 Ville 예산 1/b_solo를 크게 하회)에서
+  발생. `sim_results/R1.parquet`.
+
+### R1b — e-BH 집계층 tautness (합성 최악 null e-값, `sim/run_R1b.py`)
+
+e-process를 우회하고 집계층만 검사 (사용자 작성 스크립트): e_j iid,
+P(e_j = B) = 1/B, 그 외 0 (평균 1인 two-point e-값 — Markov/Ville 부등식이
+등호가 되는 극단 케이스), B = J/α, γ_j = 1/J, J=212, N_RUN=200,000,
+SEED=20260706. two-point 구조에서는 e_j = B가 곧 e-BH 기각 조건(e_j ≥ B/k)
+충족이므로 SupFDR = P(어느 하나 e_j = B) = 1−(1−1/B)^J ≈ 1−e^(−α).
+
+| α | empirical SupFDR (SE) | 해석해 1−(1−1/B)^J | 1−e^(−α) |
+|---:|---:|---:|---:|
+| 0.05 | 0.0486 (0.0005) | 0.0488 | 0.0488 |
+| 0.20 | 0.1818 (0.0009) | 0.1813 | 0.1813 |
+
+- 경험치가 해석해와 MC 오차 내 일치 — **e-BH 집계층은 α 예산을 거의 소진하는
+  타이트한 층** (α=0.05에서 상한 0.05 대비 실현 0.0488).
+- 따라서 R1·E1에서 관측된 SupFDR ≪ α는 집계층 느슨함이 아니라 e-process 층의
+  null crossing 보수성에서 오는 것 — 심사 M2의 "α 대비 여유가 왜 큰가"에 대한
+  층별 분해 답변으로 사용.
 
 ### R2 — deflated Sharpe ratio 비교군 (M3 대응)
 
