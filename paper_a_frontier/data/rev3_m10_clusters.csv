@@ -1,0 +1,36 @@
+cluster,n_members,best_factor,max_margin,below
+R&D,5,RDIPO,-0.7146948347363539,True
+accruals,5,OrderBacklogChg,-0.8278470805802858,True
+asset composition,5,NOA,-1.2638749027605285,True
+cash flow risk,1,VarCF,-1.1234022253572522,True
+composite accounting,5,MS,-0.7224311091523274,True
+default risk,1,OScore,-0.5651571487746462,True
+earnings event,2,AnnouncementReturn,0.261502384541926,False
+earnings forecast,8,AnalystRevision,0.151904205097313,False
+earnings growth,4,EarningsSurprise,-0.1323904004353836,True
+external financing,12,XFIN,-0.5530985660394788,True
+info proxy,1,FirmAge,-1.082528396154466,True
+informed trading,3,dCPVolSpread,-1.0308474054055006,True
+investment,8,AssetGrowth,-0.8549428337775379,True
+investment alt,10,ChInv,-0.7811051940083862,True
+investment growth,3,ChInvIA,-0.8519011769716163,True
+lead lag,9,IndRetBig,-0.8837000040076406,True
+leverage,4,Leverage,-0.7414552604687432,True
+liquidity,9,BidAskSpread,-0.9242768499400742,True
+long term reversal,6,LRreversal,-0.5931689438793855,True
+momentum,11,Mom6m,-0.5997599325311698,True
+optionrisk,4,SmileSlope,-0.2285557568158029,True
+other,27,ExchSwitch,-0.3653596043071345,True
+ownership,3,IO_ShortInterest,-0.6154368863346619,True
+payout indicator,4,DivOmit,-0.5201510248079824,True
+profitability,8,RoE,-0.7003022037281663,True
+profitability alt,3,CashProd,-1.3605641990523636,True
+recommendation,3,ChangeInRecommendation,-0.6739203078181583,True
+risk,6,Beta,-0.6737418413417626,True
+sales growth,6,RevenueSurprise,-0.7430672156293098,True
+short sale constraints,5,ShortInterest,-0.3805234660789007,True
+short-term reversal,1,STreversal,-0.2637744994034126,True
+size,1,Size,-0.8199482464253138,True
+valuation,17,DivYieldST,0.5818372149253097,False
+volatility,6,ForecastDispersion,-0.9554064161703204,True
+volume,6,VolumeTrend,-0.1299190235282773,True

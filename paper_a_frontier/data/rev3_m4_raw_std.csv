@@ -1,0 +1,9 @@
+metric,row,raw_factor,raw_value,raw_denominator,raw_margin,raw_status,standardized_factor,standardized_value,standardized_denominator,standardized_margin,standardized_status
+below_frontier_count,all_212,,209.0,212.0,,209/212 (98.6%),,208.0,212.0,,208/212 (98.1%)
+fixed_h120_top3,rank_1,AnalystRevision,2.6964721452934133,,,,AnalystRevision,2.690884104077558,,,
+fixed_h120_top3,rank_2,EarningsSurprise,2.380410782700672,,,,AnnouncementReturn,2.4235883950537525,,,
+fixed_h120_top3,rank_3,AnnouncementReturn,1.977456830008978,,,,STreversal,2.088913979136249,,,
+survivor_status,AnalystRevision,AnalystRevision,,,0.151904205097313,above (+0.152),AnalystRevision,,,0.4197573877358607,above (+0.420)
+survivor_status,AnnouncementReturn,AnnouncementReturn,,,0.261502384541926,above (+0.262),AnnouncementReturn,,,0.5141871775020723,above (+0.514)
+survivor_status,DivYieldST,DivYieldST,,,0.5818372149253097,above (+0.582),DivYieldST,,,0.7691070014827752,above (+0.769)
+median_margin_uncensored,censored_false_199,,-1.0820961135652662,199.0,-1.0820961135652662,-1.082,,-1.0338102810162213,199.0,-1.0338102810162213,-1.034

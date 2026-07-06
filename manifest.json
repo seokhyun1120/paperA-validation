@@ -1,0 +1,66 @@
+{
+  "purpose": "SHA-256 manifest for Paper A review data files.",
+  "data_version": "OSAP data release 2025.10 (v2.00), downloaded 2026-07-02",
+  "files": [
+    {
+      "path": "paper_a_frontier/data/DATA_VERSION.txt",
+      "sha256": "1f5dd0259cbe8b4bcebd70d9e2cf1f486a957d8843d50913afd85aa7e16601f9",
+      "bytes": 57
+    },
+    {
+      "path": "paper_a_frontier/data/SignalDoc.csv",
+      "sha256": "f6c055120bad7afe97c16e23e0f49bce0982269026605a955e8064bd661cf415",
+      "bytes": 181712
+    },
+    {
+      "path": "paper_a_frontier/data/m10_std_sharpe.csv",
+      "sha256": "f70b64932a318c20bbdaa1331c45d826c22ffc782e5854e56b6e0b93b8f310d8",
+      "bytes": 16470
+    },
+    {
+      "path": "paper_a_frontier/data/m4_pseudolive_sr120.csv",
+      "sha256": "b117956314ba2b3209783444be69a8336933fe05dd18e9eb8bdd54f1ee2e9e86",
+      "bytes": 5980
+    },
+    {
+      "path": "paper_a_frontier/data/osap_LS_v200.csv.gz",
+      "sha256": "e3e9414d03b28f1950d6e2d050c244843ebcb01d1cb4938d66d5065c9427df12",
+      "bytes": 2666295
+    },
+    {
+      "path": "paper_a_frontier/data/osap_postpub_sharpe.csv",
+      "sha256": "c25eed9973dad64434d59af1fe763fbd8550b09c9633c714af0c0c0d99eb254e",
+      "bytes": 29619
+    },
+    {
+      "path": "paper_a_frontier/data/rev3_e2_exact_rates.csv",
+      "sha256": "596f9fe712b0e9f5d0e7543d0d8bcad6aaecb57165f22c8d328fae4fa7af6ade",
+      "bytes": 1150
+    },
+    {
+      "path": "paper_a_frontier/data/rev3_m10_clusters.csv",
+      "sha256": "69d5beab6b570ea657bc240ade59286ecc2fc9ec3468933802164eb055af2dc6",
+      "bytes": 1826
+    },
+    {
+      "path": "paper_a_frontier/data/rev3_m1_ebh_cert.csv",
+      "sha256": "a41a94badfda9b50a0002c9174411a7c0d87153df4649fc577424773da891c90",
+      "bytes": 34196
+    },
+    {
+      "path": "paper_a_frontier/data/rev3_m4_raw_std.csv",
+      "sha256": "67d3e37d9aac7b3500486b0df2f0cb49f499b7d3587b6146447648b4f1a48768",
+      "bytes": 1110
+    },
+    {
+      "path": "paper_a_frontier/data/stage4_envelope_check.csv",
+      "sha256": "09e7b18be748edab1b8f455d9bb0a9790f3a2c2840bd39020ddcbb48447c330a",
+      "bytes": 11885
+    },
+    {
+      "path": "paper_a_frontier/data/stage7_haircut_sensitivity.csv",
+      "sha256": "b9972e6787d6261bc9fcaed49160596c55a6c42a194a159431982636163f78c0",
+      "bytes": 229
+    }
+  ]
+}

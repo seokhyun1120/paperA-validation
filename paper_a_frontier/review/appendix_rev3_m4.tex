@@ -1,0 +1,16 @@
+% Rev3 M4 -- raw vs standardized classification stability
+\begin{table}[htbp]
+\centering\small
+\caption{Raw vs. standardized classification stability. The standardized column uses $SR_{\rm std}=\sqrt{12}\,\mathrm{mean}(Y)$, with the stage4 predictable volatility rule and floor.}
+\label{tab:rev3-m4-raw-std}
+\begin{tabular}{p{0.26\linewidth}p{0.33\linewidth}p{0.33\linewidth}}
+\toprule
+Comparison & raw & standardized \\
+\midrule
+Below frontier count & 209/212 (98.6\%) & 208/212 (98.1\%) \\
+Fixed-$H=120$ top 3 & AnalystRevision (2.696); EarningsSurprise (2.380); AnnouncementReturn (1.977) & AnalystRevision (2.691); AnnouncementReturn (2.424); STreversal (2.089) \\
+Three surviving factors & AnalystRevision: above (+0.152); AnnouncementReturn: above (+0.262); DivYieldST: above (+0.582) & AnalystRevision: above (+0.420); AnnouncementReturn: above (+0.514); DivYieldST: above (+0.769) \\
+Median margin, censored excluded & -1.082 & -1.034 \\
+\bottomrule
+\end{tabular}
+\end{table}
