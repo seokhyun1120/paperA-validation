@@ -1,0 +1,33 @@
+% M8 — audit artifacts (auto-generated, review/m8_audit_table.py)
+\begin{table}[htbp]
+\centering\small
+\caption{Audit artifacts: code version, seeds, and sample sizes}
+\label{tab:audit}
+\begin{tabular}{llll}
+\hline
+Experiment & Commit & Seed & $N$ \\
+\hline
+Frontier MC (Table 2, 4 pts) & \texttt{2d7834c} & SEED=0 & $N_{\rm sim}$=10{,}000 \\
+Stage 4 envelope diagnostic & \texttt{01b5ded} & deterministic & 212 factors \\
+Stage 5 null sanity gate & \texttt{01b5ded} & SEED=0 & 100{,}000 $\times$ 2 \\
+Stage 6 grid ext.\ + margin & \texttt{01b5ded} & SEED=0 & $N_{\rm sim}$=10{,}000 \\
+E1 validity (live) & \texttt{9d091ea} & [20260706,1,$\cdot$] & 16 $\times$ 2{,}000 \\
+E2 power vs frontier & \texttt{9d091ea} & [20260706,2,$\cdot$] & 12 $\times$ 10{,}000 \\
+E3 alpha-decay wall & \texttt{9d091ea} & [20260706,3,$\cdot$] & 18 $\times$ 10{,}000 \\
+E4 envelope stress & \texttt{9d091ea} & [20260706,4,$\cdot$] & 10 $\times$ 2{,}000 \\
+E5 timing (live) & \texttt{9d091ea} & [20260706,5,$\cdot$] & 3 $\times$ 500 \\
+E1 baseline reveal + comparators & \texttt{b2656c1} & = E1 (CRN reuse) & 16 $\times$ 2{,}000 \\
+E5 baseline reveal decomp. & \texttt{b2656c1} & [20260706,5,$\cdot$] & 3 $\times$ 500 \\
+R1 mechanism check & \texttt{5b9cbac} & [20260706,6,$\cdot$] & 8 $\times$ 2{,}000 \\
+R1b e-BH tautness & \texttt{d7b2e7c} & 20260706 & 200{,}000 $\times$ 2 \\
+R2 deflated-SR comparator & \texttt{5b9cbac} & = E1 (CRN reuse) & 16 $\times$ 2{,}000 \\
+M4/M6/M7/M10/M11 review calcs & \texttt{d7b2e7c} & SEED=0 & see RUN\_LOG \\
+R3 boundary-near null stress & \texttt{d7b2e7c} & [20260706,8,$\cdot$] & 2 $\times$ 2{,}000 \\
+\hline
+\multicolumn{4}{l}{\emph{Data (sha256, first 16 hex)}} \\
+\texttt{osap\_LS\_v200.csv.gz} & \multicolumn{3}{l}{\texttt{e3e9414d03b28f19}} \\
+\texttt{SignalDoc.csv} & \multicolumn{3}{l}{\texttt{f6c055120bad7afe}} \\
+\texttt{osap\_postpub\_sharpe.csv} & \multicolumn{3}{l}{\texttt{c25eed9973dad644}} \\
+\hline
+\end{tabular}
+\end{table}

@@ -14,7 +14,7 @@ from pathlib import Path
 import numpy as np
 
 SEED_BASE = 20260706
-EXP_ID = {"E1": 1, "E2": 2, "E3": 3, "E4": 4, "E5": 5, "R1": 6, "R2": 7}
+EXP_ID = {"E1": 1, "E2": 2, "E3": 3, "E4": 4, "E5": 5, "R1": 6, "R2": 7, "R3": 8}
 NOISE_CODE = {"gaussian": 0, "t5": 1}
 BEHAVIOR_CODE = {"honest": 0, "adversarial": 1}
 

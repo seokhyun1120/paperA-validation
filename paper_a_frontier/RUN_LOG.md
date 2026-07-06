@@ -426,3 +426,88 @@ DSR 적용. 구현 공식 (논문 그대로, Euler–Mascheroni γ_EM=0.5772…)
 - FDP가 상대적으로 높은 셀은 강한 selection(s_reg=0.30)·공통요인(ρ=0.3) 조합 —
   SR 횡단면 분산 V가 줄어 SR0가 낮아지는 방향.
 - `sim_results/R2.parquet`, `sim_E1_supfdr.png`를 4절차 비교(DSR 4번째 막대)로 교체.
+
+## 심사 대응 2차 — 8건 (2026-07-06, `review/` + `sim/run_R3.py`)
+
+frontier.py 통계 로직 무수정 (M7도 파일 수정 없이 모듈 rng 재설정으로 계산).
+STOP 조건 해당 없음 — 기존 수치 전부 불변 확인.
+
+### 1. M4 — fixed-H=120 pseudo-live 인증 (`review/m4_pseudolive.py`)
+
+n_j≥120인 199개 팩터를 post-pub 첫 120개월에서 freeze, raw SR_ann vs
+frontier(120)=1.8392: **통과 3/199 = 1.5%** — AnalystRevision 2.70,
+EarningsSurprise 2.38, AnnouncementReturn 1.98. 분위수 Q1 0.076 / med 0.283 /
+Q3 0.613. → "고정 지평 pseudo-live 인증으로도 사실상 아무도 frontier를 넘지
+못함". `data/m4_pseudolive_sr120.csv`.
+
+### 2. M7 — 장기 frontier 직접 MC (`review/m7_longhorizon.py`)
+
+N_GRID 확장 시나리오의 추첨 순서 재현 (rng를 SEED=0으로 재설정 후 60→600 순
+호출). **기존 4점 bit-exact 불변 확인** (assert). Table 2 확장값:
+
+| n (mo) | oracle δ*_ann | Catoni δ*_ann |
+|---:|---:|---:|
+| 480 | 0.83 | **0.90** (δ*=0.2584) |
+| 540 | 0.78 | **0.84** (δ*=0.2416) |
+| 600 | 0.74 | **0.79** (δ*=0.2286) |
+
+→ 50년(600개월) 관측으로도 요구 Sharpe 연 0.79 — post-pub median 0.26의 3배.
+
+### 3. M6 — survivor envelope-consistent 재계산 (`review/m6_survivor_envelope.py`)
+
+frontier 커널(log_e_path)로 m_env 오버라이드 직접 MC (N_SIM=10,000, SEED=0):
+
+| 팩터 | n | m_env | frontier_ann | 실현 SR_ann | 판정 |
+|---|---:|---:|---:|---:|---|
+| AnnouncementReturn | 336 | 1.46 | 1.2135 | 1.3520 | **PASS** (1.30 참조: 1.0776) |
+| AnalystRevision | 480 | 1.39 | 0.9588 | 1.0549 | **PASS** (1.30 참조: 0.8951) |
+
+→ 두 생존 팩터 모두 자기 envelope-consistent frontier 기준으로도 통과 확정.
+
+### 4. M9 — betting grid 공개 표
+
+`review/appendix_M9_betting_grid.tex` 생성 (frontier.py에서 상수 직접 읽음):
+c_k = {0, 0.05, 0.1, 0.15, 0.2, 0.3, 0.4} (K=7), w_k = 1/7 균등, λ_k = c_k/m_env,
+m_env=1.3 + coverage 규칙, scale rule(36개월 trailing sd, ddof=1, 최소 24),
+v_min(pre-registration 5% 분위수), freeze rule, 보간(60–600 선형)/외삽(√n),
+seed 정책(frontier SEED=0 / sim [20260706, exp, cell, run]).
+
+### 5. M8 — audit artifact 표
+
+`review/appendix_M8_audit.tex` 생성: 전 실험(frontier·Stage4–6·E1–E5 1/2차·
+R1·R1b·R2·R3·본 8건)의 실행 기준 commit, seed, N + 데이터 sha256
+(osap_LS_v200.csv.gz / SignalDoc.csv / osap_postpub_sharpe.csv, 앞 16 hex).
+
+### 6. M10 — standardized-score Sharpe sensitivity (`review/m10_std_sharpe.py`)
+
+SR_std = √12·mean(Y_t), Y_t = ret/max(v_{t-1}, v_min) (stage4 규칙 동일):
+**Pearson corr(raw, std) = 0.962** (Spearman 0.941), median raw 0.258 vs
+std 0.287, diff(std−raw) median **+0.022** (Q1 −0.038, Q3 +0.105).
+→ 표준화 SR로 바꿔도 그림 불변 (frontier 대비 격차 규모에 비해 미미).
+`data/m10_std_sharpe.csv`.
+
+### 7. M11 — A_j 관례 sensitivity (`review/m11_aj_sensitivity.py`)
+
+| A_j 관례 | below % (212) | matured 수 | median margin |
+|---|---:|---:|---:|
+| Year 1월초 | 98.6% | 201 | −1.041 |
+| Year 7월초 | 98.6% | 199 | −1.055 |
+| Year 12월말 (primary) | 98.6% | 199 | −1.082 |
+
+→ below-frontier %는 관례와 완전 무관, margin 중앙값 차이 ≤ 0.04.
+
+### 8. R3 — boundary-near null stress (`sim/run_R3.py`)
+
+null 수익률에 GARCH(1,1) (a=0.10, b=0.85, 무조건부 분산 1) + AR(1) φ=0.2
+(조건부 평균 0 가정의 명시적 위반 — 무조건부 평균은 0) + ρ=0.3 공통요인 결합.
+envelope는 등록 규칙대로 추정 (trailing 36 sd + 등록 전 v_min 5% 분위수 표준화,
+m_env=1.3). 등록 = in-sample SR>0.15 첫 돌파 (뮤테이션·포기 없음 — 분포
+스트레스에 집중). J_budget=212, D=A+120, N_RUN=2,000, seed [20260706, 8, run].
+
+- n_reg 평균 100.0 (자기상관이 in-sample SR을 부풀려 전 후보 등록),
+  max log e = 8.74 (경계 8.35를 실제로 넘는 런 존재 — 스트레스 유효).
+- **발견 9건/2,000런 → empirical SupFDR = 0.0045, Wilson 95% CI
+  [0.0024, 0.0085]** — α=0.05, 합격선 0.0646 대비 큰 여유로 유지.
+- E1(iid null, 발견 0)과 달리 경계 근처에서 실제 crossing이 발생하지만
+  SupFDR 통제는 유지 — 분포 가정(iid·gaussian·등분산) 위반 결합에 대한
+  프로토콜의 강건성 근거. `sim_results/R3.parquet`.
