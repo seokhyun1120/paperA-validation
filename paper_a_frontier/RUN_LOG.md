@@ -350,3 +350,58 @@ mean_m/sd_m/frontier_at_nj에서 직접 재계산. frontier·A_j 관례 동일.
 
 haircut을 줘도 below %·margin이 사실상 불변/악화 방향 — "Day-1 detectability
 거의 불가" 내러티브는 hurdle grid에 강건. `data/stage7_haircut_sensitivity.csv`.
+
+## 심사 대응 실험 R1·R2 (2026-07-06, 엔진 커밋 5b9cbac 기준 실행)
+
+frontier.py 무수정, 기존 sim/ 재사용. SEED: R1은 `[20260706, 6, ...]`
+(세계 잡음은 (rho, run)만 — alpha/behavior 축 CRN 공유), R2는 E1과 동일
+seed 스트림으로 세계·등록 집합을 그대로 재생성.
+
+### R1 — validity mechanism check (M2 대응) : **PASS**
+
+all-null, E1 searcher 재사용, J_budget=20, γ=1/20, α ∈ {0.2, 0.5}
+(b_solo = 100, 40), D=120, gaussian, s_reg=0.15, N_RUN=2,000/셀.
+
+| α | ρ | behavior | SupFDR | 발견률(런) | 거짓발견 합 | 합격선 α+3SE |
+|---:|---:|---|---:|---:|---:|---:|
+| 0.2 | 0.0 | honest | 0.0000 | 0.00% | 0 | 0.2268 |
+| 0.2 | 0.0 | adversarial | 0.0000 | 0.00% | 0 | 0.2268 |
+| 0.2 | 0.3 | honest | 0.0005 | 0.05% | 1 | 0.2268 |
+| 0.2 | 0.3 | adversarial | 0.0000 | 0.00% | 0 | 0.2268 |
+| 0.5 | 0.0 | honest | 0.0025 | 0.25% | 5 | 0.5335 |
+| 0.5 | 0.0 | adversarial | 0.0025 | 0.25% | 6 | 0.5335 |
+| 0.5 | 0.3 | honest | 0.0025 | 0.25% | 5 | 0.5335 |
+| 0.5 | 0.3 | adversarial | 0.0015 | 0.15% | 3 | 0.5335 |
+
+- 경계를 낮추면(b_solo=40) 파이프라인이 실제로 거짓발견을 생산함(총 20건)을
+  확인 — E1의 SupFDR=0이 "발견이 원천 불가능해서"가 아니라 경계·예산 규율의
+  결과임을 보여주는 메커니즘 체크. 전 셀 SupFDR ≪ α+3SE로 **PASS**.
+- 발견 0인 셀 3개(α=0.2)는 지침대로 α 추가 상향 없이 그대로 보고.
+- Catoni+e-BH의 보수성으로 실현 SupFDR이 명목 α보다 훨씬 낮음 (α=0.5에서
+  ~0.2%) — validity 마진이 큰 영역에서 작동함을 함께 기록. `sim_results/R1.parquet`.
+
+### R2 — deflated Sharpe ratio 비교군 (M3 대응)
+
+E1 16셀 세계·등록 집합 재사용. 런 종료 시점에 등록 전체를 batch family로,
+full-history Sharpe([0, min(D_j, T-1)], naive와 동일 창)에 BLdP(2014, JPM 40(5))
+DSR 적용. 구현 공식 (논문 그대로, Euler–Mascheroni γ_EM=0.5772…):
+  V = Var({SR_i}, ddof=1), N = n_reg,
+  SR0 = √V·[(1−γ_EM)·Φ⁻¹(1−1/N) + γ_EM·Φ⁻¹(1−1/(N·e))],
+  DSR_i = Φ((SR_i−SR0)·√(n_i−1)/√(1−γ3_i·SR_i+((γ4_i−1)/4)·SR_i²)),
+  발견 ⟺ 1−DSR < 0.05. (γ3/γ4는 population 모멘트, SR은 월간·sd ddof=1,
+  n_i는 전략별 관측 길이 — BLdP의 공통 n을 전략별로 일반화.)
+
+| 절차 (16셀 범위) | FDP = P(발견≥1) |
+|---|---|
+| full protocol (baseline reveal) | 전 셀 0.0000 |
+| **DSR batch family (BLdP 2014)** | **0.0020 – 0.0185** |
+| naive full-history t-test | 0.858 – 1.000 |
+| fresh-data 반복 검정 | 전 셀 1.000 |
+
+- DSR은 이 설계에서 FDP를 잘 통제 (전 셀 ≤ 1.9%, α=0.05 이내) — 단 (i) 정확한
+  trials N=n_reg를 외생적으로 알려준 이상적 조건이고 (ii) 런 종료 시점의 one-shot
+  batch 검정이라 anytime validity·online 발견·등록순 reveal이 없음 — 프로토콜과의
+  차별점은 오류 통제율이 아니라 **운용 형태(순차/anytime vs 사후 일괄)**임을 명기.
+- FDP가 상대적으로 높은 셀은 강한 selection(s_reg=0.30)·공통요인(ρ=0.3) 조합 —
+  SR 횡단면 분산 V가 줄어 SR0가 낮아지는 방향.
+- `sim_results/R2.parquet`, `sim_E1_supfdr.png`를 4절차 비교(DSR 4번째 막대)로 교체.
