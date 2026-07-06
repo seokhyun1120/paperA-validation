@@ -1,15 +1,16 @@
-"""E5 — Queue/timing (§4.1 3항 분해 재현).
+"""E5 — Queue/timing (v4 §5.8 3항 분해, baseline reveal 판).
 
-등록 도착 과정: 포아송 강도 lam_arr/월, 원장 수용 능력 1건/월 (FIFO 큐 — 대기 발생),
-도착 전략의 50%는 alternative (delta = delta*(120) 상수), 50%는 null.
-J_budget=212, D_j = A_j + 120, T=360, gaussian, N_RUN=500/셀.
+등록 도착 과정: 포아송 강도 lam_arr/월, 도착 즉시 등록 (A_j = arrival; 수용능력
+제약 없음), 예산 J_budget=212 소진 시 거절. 도착의 50%는 alternative
+(delta = delta*(120) 상수), 50%는 null. D_j = A_j + 120, T = 360, gaussian.
 
-발견 지연 분해 (발견된 alternative별):
-  W_queue = A_j - arrival           (등록 대기)
-  T_grow  = tau_solo - A_j          (e-process 성장; solo 도달 전 k>=2로 발견되면
-                                     T_grow = t_disc - A_j, order 항은 결측 처리)
-  T_order = t_disc - tau_solo <= 0  (online e-BH의 다중성 이득 — reveal 순서 효과)
-측정 부가: 동시 활성 전략 수 경로(평균/최대), gamma 예산 소진 시점.
+발견 시점은 baseline reveal (동결 e-value의 등록순 reveal)로 계산.
+발견된 alternative별 분해 (전 항 >= 0):
+  T_freeze = tau_j - A_j          (동결까지: solo 도달 또는 deadline)
+  W_fifo   = B_j - tau_j          (등록순 큐: 앞 전략들의 동결 대기)
+  T_unlock = B_{M_disc} - B_j     (reveal 후 문턱 완화 대기)
+총 지연 (A_j 기준) = T_freeze + W_fifo + T_unlock.
+셀: lam_arr ∈ {0.5, 1.0, 2.0}, N_RUN = 500/셀.
 실행: MPLBACKEND=Agg python3 -m sim.run_E5
 """
 import time
@@ -27,7 +28,6 @@ T = 360
 DL = 120
 N_RUN = 500
 P_ALT = 0.5
-R_MAX = 1              # 월당 등록 수용 능력
 LAM_ARR = [0.5, 1.0, 2.0]
 
 
@@ -36,65 +36,45 @@ def run_one(lam, run_idx):
     log_b = ep.log_b_solo(1.0 / J_BUDGET)
     d_star = float(ep.frontier.catoni[1])              # delta*(120)
 
-    # 도착·큐·등록 (FIFO, 월당 R_MAX건, 예산 J_BUDGET)
+    # 도착 즉시 등록 (예산 소진 시 거절)
     counts = rng.poisson(lam, T)
-    arrivals = np.repeat(np.arange(T), counts)         # 도착 월 (시간순)
-    queue, A_list, arr_list = [], [], []
-    ai = 0
-    budget_exh_month = -1
-    for t in range(T):
-        while ai < len(arrivals) and arrivals[ai] == t:
-            queue.append(t)
-            ai += 1
-        for _ in range(R_MAX):
-            if not queue or len(A_list) >= J_BUDGET:
-                break
-            arr_list.append(queue.pop(0))
-            A_list.append(t)
-        if len(A_list) >= J_BUDGET and budget_exh_month < 0:
-            budget_exh_month = t
-    J = len(A_list)
-    A = np.array(A_list)
-    arr = np.array(arr_list)
+    arrivals = np.repeat(np.arange(T), counts)
+    n_arrived = len(arrivals)
+    A = arrivals[:J_BUDGET]
+    budget_exh_month = int(arrivals[J_BUDGET - 1]) if n_arrived >= J_BUDGET else -1
+    J = len(A)
     is_alt = rng.random(J) < P_ALT
 
-    # post-A score (관측 가능 길이만), delta 주입
+    # post-A score, delta 주입 → e-process 동결
     lens = np.minimum(DL, T - 1 - A)
-    Ymat = np.zeros((J, DL))
     eps = world.draw_eps(rng, J, DL, noise="gaussian")
+    Ymat = np.zeros((J, DL))
     for j in range(J):
         Ymat[j, :lens[j]] = eps[j, :lens[j]] + (d_star if is_alt[j] else 0.0)
     logE = ep.log_e_path(Ymat, m_env=M_ENV)
     logE_frozen, tau = ep.freeze_at_crossing(logE, log_b)
     tau = np.where((tau >= 0) & (tau < lens), tau, -1)
-
-    E_cal = np.zeros((T, J))
+    solo = tau >= 0
+    e_log = np.zeros(J)
     for j in range(J):
-        ell = lens[j]
-        if ell > 0:
-            E_cal[A[j] + 1:A[j] + 1 + ell, j] = logE_frozen[j, :ell]
-            E_cal[A[j] + 1 + ell:, j] = logE_frozen[j, ell - 1]
-    res = ebh.online_ebh(E_cal, ~is_alt, ALPHA, J_BUDGET)
+        if lens[j] > 0:
+            e_log[j] = logE_frozen[j, lens[j] - 1]
+    tau_cal = np.where(solo, A + 1 + tau, A + lens)
 
-    tau_cal = np.where(tau >= 0, A + 1 + tau, -1)
-    t_disc = res["disc_time"]
-    # 동시 활성: 등록됨 & 데드라인 전 & 아직 발견 안 됨
-    tgrid = np.arange(T)[:, None]
-    end_active = np.where(t_disc >= 0, np.minimum(t_disc, A + lens), A + lens)
-    active = ((tgrid > A[None, :]) & (tgrid <= end_active[None, :])).sum(axis=1)
+    res = ebh.baseline_reveal(e_log, tau_cal, ~is_alt, ALPHA, J_BUDGET)
+    B = res["B"]
 
     recs = []
     for j in range(J):
-        recs.append({"lam_arr": lam, "run_id": run_idx, "arrival": int(arr[j]),
-                     "A": int(A[j]), "is_alt": bool(is_alt[j]),
-                     "w_queue": int(A[j] - arr[j]),
-                     "discovered": t_disc[j] >= 0,
-                     "t_disc": int(t_disc[j]), "tau_solo": int(tau_cal[j])})
-    summary = {"lam_arr": lam, "run_id": run_idx, "n_arrived": len(arrivals),
+        recs.append({"lam_arr": lam, "run_id": run_idx, "A": int(A[j]),
+                     "is_alt": bool(is_alt[j]), "solo": bool(solo[j]),
+                     "tau_cal": int(tau_cal[j]), "B_j": int(B[j]),
+                     "discovered": bool(res["disc"][j]),
+                     "t_disc": int(res["disc_time"][j])})
+    summary = {"lam_arr": lam, "run_id": run_idx, "n_arrived": n_arrived,
                "n_reg": J, "budget_exh_month": budget_exh_month,
                "n_disc": res["n_disc"], "n_false": res["n_false"],
-               "sup_fdp": res["sup_fdp"], "active_mean": float(active.mean()),
-               "active_max": int(active.max())}
+               "sup_fdp": res["sup_fdp"]}
     return recs, summary
 
 
@@ -111,59 +91,60 @@ def main():
     det = pd.DataFrame(all_recs)
     summ = pd.DataFrame(all_summ)
     common.write_parquet(det, "E5_strategies.parquet")
-    path = common.write_parquet(summ, "E5.parquet")
+    common.write_parquet(summ, "E5.parquet")
 
-    # 3항 분해 (발견된 alternative만)
+    # 3항 분해 (발견된 alternative만, 전 항 >= 0)
     d = det[det["is_alt"] & det["discovered"]].copy()
-    d["t_grow"] = np.where(d["tau_solo"] >= 0, d["tau_solo"] - d["A"],
-                           d["t_disc"] - d["A"])
-    d["t_order"] = np.where(d["tau_solo"] >= 0, d["t_disc"] - d["tau_solo"], np.nan)
-    print("\n발견 지연 3항 분해 (발견된 alt, 평균 [중앙값]):")
+    d["t_freeze"] = d["tau_cal"] - d["A"]
+    d["w_fifo"] = d["B_j"] - d["tau_cal"]
+    d["t_unlock"] = d["t_disc"] - d["B_j"]
+    assert (d[["t_freeze", "w_fifo", "t_unlock"]].to_numpy() >= 0).all(), \
+        "분해 항에 음수 발생"
+    print("\n발견 지연 3항 분해 (발견된 alt, 평균 [중앙값], 단위 월):")
     decomp = []
     for lam in LAM_ARR:
         s = d[d["lam_arr"] == lam]
         srun = summ[summ["lam_arr"] == lam]
+        alt_all = det[(det["lam_arr"] == lam) & det["is_alt"]]
         row = {"lam_arr": lam, "n_disc_alt": len(s),
-               "w_queue_mean": s["w_queue"].mean(), "w_queue_med": s["w_queue"].median(),
-               "t_grow_mean": s["t_grow"].mean(), "t_grow_med": s["t_grow"].median(),
-               "t_order_mean": s["t_order"].mean(),
-               "ebh_early_share": float((s["t_order"] < 0).mean()),
-               "k2_only_share": float((s["tau_solo"] < 0).mean()),
+               "t_freeze_mean": s["t_freeze"].mean(), "t_freeze_med": s["t_freeze"].median(),
+               "w_fifo_mean": s["w_fifo"].mean(), "w_fifo_med": s["w_fifo"].median(),
+               "t_unlock_mean": s["t_unlock"].mean(), "t_unlock_med": s["t_unlock"].median(),
+               "total_mean": (s["t_freeze"] + s["w_fifo"] + s["t_unlock"]).mean(),
+               "alt_det_rate": float(alt_all["discovered"].mean()),
+               "k2_only_share": float((~s["solo"]).mean()),
                "budget_exh_month_med": srun["budget_exh_month"].replace(-1, np.nan).median(),
-               "active_mean": srun["active_mean"].mean(),
-               "sup_fdp_mean": srun["sup_fdp"].mean(),
-               "alt_det_rate": float(det[(det["lam_arr"] == lam) & det["is_alt"]]
-                                     .groupby(lambda _: 0)["discovered"].mean().iloc[0])}
+               "sup_fdp_mean": srun["sup_fdp"].mean()}
         decomp.append(row)
-        print(f"  λ={lam}: W_queue={row['w_queue_mean']:.1f} [{row['w_queue_med']:.0f}] "
-              f"+ T_grow={row['t_grow_mean']:.1f} [{row['t_grow_med']:.0f}] "
-              f"+ T_order={row['t_order_mean']:.2f} "
-              f"(e-BH 조기발견 비율={row['ebh_early_share']:.1%}, "
-              f"k≥2 전용={row['k2_only_share']:.1%})")
+        print(f"  λ={lam}: T_freeze={row['t_freeze_mean']:.1f} [{row['t_freeze_med']:.0f}]"
+              f" + W_fifo={row['w_fifo_mean']:.1f} [{row['w_fifo_med']:.0f}]"
+              f" + T_unlock={row['t_unlock_mean']:.1f} [{row['t_unlock_med']:.0f}]"
+              f" = {row['total_mean']:.1f} | alt검출률={row['alt_det_rate']:.1%}"
+              f" k≥2전용={row['k2_only_share']:.1%} supFDP={row['sup_fdp_mean']:.5f}")
     dec = pd.DataFrame(decomp)
     common.write_parquet(dec, "E5_decomp.parquet")
     print("\n" + dec.to_string(index=False))
     print(f"\nE5 완료 (총 {time.time()-t0:.0f}s, commit {common.commit_hash()})")
 
-    # ---- 그림: 지연 분해 스택 바 ----
+    # ---- 그림: 3항 분해 스택 바 (전 항 >= 0) ----
     okabe = ["#0072B2", "#E69F00", "#009E73"]
     fig, ax = plt.subplots(figsize=(7.5, 5))
     x = np.arange(len(LAM_ARR))
-    wq = dec["w_queue_mean"].to_numpy()
-    tg = dec["t_grow_mean"].to_numpy()
-    to = dec["t_order_mean"].to_numpy()
-    ax.bar(x, wq, 0.55, color=okabe[0], label="W_queue (registration wait)")
-    ax.bar(x, tg, 0.55, bottom=wq, color=okabe[1], label="T_grow (e-process growth)")
-    ax.bar(x, to, 0.55, bottom=wq + tg, color=okabe[2],
-           label="T_order (e-BH multiplicity gain, ≤0)")
-    for xi_, total in zip(x, wq + tg + to):
-        ax.annotate(f"net {total:.0f}mo", (xi_, total + 2), ha="center", fontsize=8)
+    tf = dec["t_freeze_mean"].to_numpy()
+    wf = dec["w_fifo_mean"].to_numpy()
+    tu = dec["t_unlock_mean"].to_numpy()
+    ax.bar(x, tf, 0.55, color=okabe[0], label="T_freeze (to solo/deadline freeze)")
+    ax.bar(x, wf, 0.55, bottom=tf, color=okabe[1], label="W_fifo (reveal queue wait)")
+    ax.bar(x, tu, 0.55, bottom=tf + wf, color=okabe[2],
+           label="T_unlock (threshold relaxation wait)")
+    for xi_, total in zip(x, tf + wf + tu):
+        ax.annotate(f"{total:.0f}mo", (xi_, total + 2), ha="center", fontsize=8)
     ax.set_xticks(x)
     ax.set_xticklabels([f"λ_arr={l}/mo" for l in LAM_ARR])
-    ax.set_ylabel("months (mean over discovered alternatives)")
-    ax.set_ylim(0, (wq + tg).max() * 1.12)
-    ax.set_title(f"E5 — discovery delay decomposition\n"
-                 f"(capacity {R_MAX}/mo, J_budget={J_BUDGET}, N_RUN={N_RUN}/cell)",
+    ax.set_ylabel("months since A_j (mean over discovered alternatives)")
+    ax.set_ylim(0, (tf + wf + tu).max() * 1.4)   # 범례·주석 겹침 방지 여백
+    ax.set_title(f"E5 — discovery delay decomposition, baseline reveal\n"
+                 f"(immediate registration, J_budget={J_BUDGET}, N_RUN={N_RUN}/cell)",
                  fontsize=11)
     ax.legend(fontsize=8)
     ax.grid(alpha=0.3, axis="y")

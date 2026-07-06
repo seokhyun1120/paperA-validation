@@ -214,29 +214,33 @@ freeze rule 불변식 통과.
 설계도구임을 확인. δ*는 frontier.catoni 정확값 사용 (t5 셀도 gaussian δ* 공용,
 Stage 3의 δ* 차이 ≤0.001 근거). `sim_results/E2.parquet`, `sim_E2_power.png`.
 
-### E4 — Envelope stress : **ξ≤1.5 PASS / ξ=2.0 상계 초과 → STOP 항목**
+### E4 — envelope 미스펙 스트레스 (경험적)
 
-전부-null, Var(Y) = ξ·m_env_reg², J=212 동시 등록, D=120, gaussian, N_RUN=2,000.
+(2026-07-06 2차 작업 Task 4로 라벨 재정의: α·ξ_var는 **참조선(reference line)**
+이며 Corollary 2의 상계가 아님 — 해당 정리는 지속적 분산 위반을 커버하지 않음.
+PASS/FAIL 게이트 제거, empirical degradation curve로 재명명. 코드 로직·seed·
+숫자는 1차 실행과 동일.)
 
-| ξ | m=1.2 | m=1.3 | m=1.5 | 상계 α·ξ | 판정 |
+전부-null, Var(Y) = ξ_var·m_env_reg², J=212 동시 등록, D=120, gaussian, N_RUN=2,000.
+
+| ξ_var | m=1.2 | m=1.3 | m=1.5 | 참조선 α·ξ_var | 비고 |
 |---|---:|---:|---:|---:|---|
-| 1.0 | — | 0.0030 | — | 0.050 | PASS (기준셀) |
-| 1.2 | 0.0105 | 0.0130 | 0.0080 | 0.060 | PASS |
-| 1.5 | 0.0510 | 0.0480 | 0.0515 | 0.075 | PASS |
-| 2.0 | **0.2710** | **0.2615** | **0.2685** | 0.100 | **FAIL** |
+| 1.0 | — | 0.0030 | — | 0.050 | 기준셀 |
+| 1.2 | 0.0105 | 0.0130 | 0.0080 | 0.060 | 참조선 내 |
+| 1.5 | 0.0510 | 0.0480 | 0.0515 | 0.075 | 참조선 내 |
+| 2.0 | **0.2710** | **0.2615** | **0.2685** | 0.100 | **참조선 초과** |
 
-- **ξ=2.0에서 실현 SupFDR ≈ 0.26-0.27 ≫ α·ξ = 0.10.** 지침대로 파라미터 조정
-  없이 STOP·보고. 점검 결과 코드 아티팩트 아님 판단 근거:
+- **ξ_var=2.0에서 실현 SupFDR ≈ 0.26-0.27 (참조선 0.10의 ~2.6배).** 코드
+  아티팩트 아님 판단 근거:
   (1) 기준셀 ξ=1.0은 0.003으로 정상 (E1·Stage 5 null gate와 일관),
   (2) Y=m√ξ·ε, λ=c/m 구조상 m_env_reg가 정확히 소거되는 스케일 불변성이
   이론 예측인데 실측 세 값(0.271/0.262/0.269)이 MC 오차 내 일치,
   (3) 전략당 crossing율 ~0.17%로 개별 경로 물리와 정합 — 212개 union이 27%를 만듦.
 - 해석: Catoni 증분의 supermartingale 성질은 E[Y²]≤m_env²에 의존하는데, 지속적
-  ξ배 위반 시 E[E_n] 상계가 exp(nλ²m²(ξ-1)/2)로 n에 따라 증가 → ξ=2, n=120에서
-  Ville-형 α·ξ 상계가 성립할 이유가 없음. **Corollary 2의 α·ξ 서술이 "지속적
-  분산 위반"까지 커버하는지 본문 가정 재확인 필요** (일시적/평균적 위반 가정이면
-  시뮬 설계와 이론의 스코프 차이). ξ≤1.5까지는 상계 내 — envelope 여유가
-  1.5배 이내 위반까지는 실무적으로 안전. `sim_results/E4.parquet`, `sim_E4_stress.png`.
+  ξ_var배 위반 시 E[E_n] 상계가 exp(nλ²m²(ξ_var-1)/2)로 n에 따라 증가 → ξ_var=2,
+  n=120에서 Ville-형 보장이 성립할 이유가 없음 (그래서 α·ξ_var는 참조선일 뿐).
+  ξ_var≤1.5까지는 degradation이 참조선 내 — envelope 여유가 1.5배 이내 위반까지는
+  실무적으로 안전. `sim_results/E4.parquet`, `sim_E4_stress.png`.
 
 ### E3 — Alpha decay hard-wall (N=10,000/셀, gaussian)
 
@@ -268,11 +272,81 @@ Stage 3의 δ* 차이 ≤0.001 근거). `sim_results/E2.parquet`, `sim_E2_power.
 
 ### 종합
 
-- 게이트: 회귀 PASS → E1 PASS → E2 PASS. E4는 ξ≤1.5 PASS, **ξ=2.0 초과(STOP
-  보고 — 이론 스코프 확인 대기, 코드/freeze/normalization 점검 완료)**. E3·E5는
-  측정 실험으로 완료.
+- 게이트: 회귀 PASS → E1 PASS → E2 PASS. E4는 경험적 degradation curve로 보고
+  (ξ_var≤1.5 참조선 내, ξ_var=2.0 초과 — 라벨 재정의는 2026-07-06 2차 작업 Task 4,
+  코드/freeze/normalization 점검 완료). E3·E5는 측정 실험으로 완료.
 - frontier.py 무수정 유지 (커널은 import, 회귀 테스트 bit-exact).
 - 참고: `sim_results/*.parquet`와 `run_simE*.log`는 repo .gitignore 정책
   (*.parquet, run_*.log — 재생성 가능 산출물 커밋 금지)에 따라 비추적. 셀별
   SEED 체계 + 엔진 커밋(9d091ea) 고정이므로 `python3 -m sim.run_E{1..5}`로
   bit-동일 재생성 가능.
+
+## §8.1 잔여 작업 2차 (2026-07-06, 엔진 커밋 b2656c1 기준 실행)
+
+frontier.py 무수정 유지, 회귀 테스트(bit-exact) 재확인 통과. SEED 체계는 1차와
+동일 (`default_rng([20260706, exp_id, ...])`, CRN 재사용).
+
+### Task 1 — baseline reveal 구현 (`sim/ebh.py` 확장)
+
+논문 baseline "동결 e-value의 등록순 reveal"을 `baseline_reveal()`로 구현:
+e_j = E_{j,τ_j} (solo/데드라인/포기 중 최선착 동결), B_m = max_{i≤m} τ_i (FIFO),
+k_m = max{k≤m : #{j≤m : γ_j e_j ≥ 1/(αk)} ≥ k} (proofs final §4), k_m=0 → R_m=∅.
+R_m nested는 매 스텝 assert로 강제 (전체 실행에서 위반 0). 기존 live 변형
+(`online_ebh`, 진행 중 e-process에 매월 e-BH)은 secondary로 보존.
+
+### Task 2 — E1 재실행 (baseline reveal) + 비교군 2종 : **PASS**
+
+동일 세계·CRN, 16셀 × 2,000런. 합격선 α + 3×SE(p=α) = 0.0646.
+
+| 절차 | empirical SupFDR (16셀 범위) |
+|---|---|
+| **full protocol (baseline reveal)** | **전 셀 0.00000** (발견 0/32,000런, 최대 동결 log e = 6.15 < 8.35) → PASS |
+| 비교군1 naive full-history t-test | 0.858 – 1.000 (런당 평균 허위발견 7.8~18.0건) |
+| 비교군2 fresh-data 반복 t-검정 (peeking) | **전 셀 1.000** (런당 평균 30~58건) |
+
+- naive가 1.000 미만인 셀은 전부 ρ=0.3 (공통요인이 운을 상관시켜 "전부 불운"인
+  런 존재). fresh-peek은 uncorrected 반복 검정이라 예외 없이 1.0.
+- 그림 `sim_E1_supfdr.png`를 3절차 비교로 교체, `E1.parquet` 교체
+  (컬럼: sup_fdp, naive_fdp/naive_n_disc, fresh_fdp/fresh_n_disc, ...).
+- naive 창 = [0, min(D_j, T-1)] (포기 무관 — naive 연구자는 abandon하지 않음),
+  파생 전략은 잠재 시계열 전체 = 변형 전략의 풀히스토리 백테스트. fresh는
+  post-A_j 누적 t, 최소 6개월.
+
+### Task 3 — E5 재설계 (v4 §5.8, baseline reveal) 
+
+R_MAX 제거(도착 즉시 등록, A_j = arrival), λ_arr ∈ {0.5,1,2}, 50% alt
+(δ=δ*(120)), J_budget=212, D=A+120, T=360, N_RUN=500/셀. 분해 전 항 ≥ 0 assert 통과.
+
+| λ_arr | T_freeze 평균[중앙] | W_fifo | T_unlock | 합계 | alt 검출률 | k≥2 전용 | 예산소진(중앙) | supFDP |
+|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 0.5 | 103.2 [111] | 10.0 [0] | 5.6 [0] | 118.9 | 76.6% | 52.3% | 356mo | 0.00005 |
+| 1.0 | 107.5 [119] | 11.7 [0] | 3.6 [0] | 122.8 | 96.0% | 48.1% | 212mo | 0.00000 |
+| 2.0 | 107.4 [118] | 12.2 [1] | 1.7 [0] | 121.3 | 95.9% | 47.6% | 106mo | 0.00007 |
+
+- T_freeze가 지배 (발견의 ~절반이 solo 미도달 → 데드라인 120mo 동결 후 k≥2로
+  발견되므로 중앙값이 111~119mo). W_fifo는 등록순 prefix 동결 대기, T_unlock은
+  잔여 문턱 완화 대기 — 둘 다 평균 한 자릿수~10mo, 중앙값 0.
+- live 변형 대비 한 줄: live(1차)는 진행 중 e-값에 매월 e-BH를 적용해 평균
+  발견 지연이 ~63-111mo(순)로 더 빨랐음 — baseline reveal은 동결·등록순 규율의
+  대가로 평균 ~119-123mo. `sim_E5_timing.png`·E5 parquet 교체.
+
+### Task 4 — E4 라벨 수정
+
+"theory bound α·ξ" → "reference line α·ξ_var (not the Corollary-2 bound)",
+PASS/FAIL 게이트 제거, empirical degradation curve로 재명명 (본 로그 E4 섹션
+제목·표 라벨도 수정). 코드 로직·seed 불변 — 재실행 결과 1차와 전 셀 동일 확인
+(0.0030/0.0105/.../0.2685). `sim_E4_stress.png`·E4.parquet 라벨만 갱신.
+
+### Task 5 — OSAP haircut sensitivity (`stage7_haircut_sensitivity.py`)
+
+월별 hurdle h = (1+a)^(1/12)−1 (percent 단위 ×100), sd 불변이므로 기존
+mean_m/sd_m/frontier_at_nj에서 직접 재계산. frontier·A_j 관례 동일.
+
+| a (연율) | h (%/월) | below-frontier % (212) | margin 중앙값 (matured 199) |
+|---:|---:|---:|---:|
+| 0 (primary) | 0 | 98.6% | −1.082 |
+| 0.005 | 0.0416 | 98.6% | −1.125 |
+| 0.010 | 0.0830 | 99.1% | −1.193 |
+
+haircut을 줘도 below %·margin이 사실상 불변/악화 방향 — "Day-1 detectability
+거의 불가" 내러티브는 hurdle grid에 강건. `data/stage7_haircut_sensitivity.csv`.
