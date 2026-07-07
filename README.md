@@ -2,8 +2,13 @@
 
 Companion repository for **Paper A** (day-1 detectability frontier). The
 paper's code, data derivatives, and run history live under
-[`paper_a_frontier/`](paper_a_frontier/); other directories are unrelated
-research projects sharing this workspace repository.
+[`paper_a_frontier/`](paper_a_frontier/).
+
+**History note (2026-07-07).** The git history was filtered once with
+`git filter-repo` to remove unrelated, unpublished projects that shared the
+original workspace repository. File contents and data SHA-256 hashes are
+unchanged; only commit IDs changed. See [`HASH_MAP.md`](HASH_MAP.md) for the
+old-to-new commit map used by pre-2026-07-07 manuscript copies.
 
 Key entry points:
 
