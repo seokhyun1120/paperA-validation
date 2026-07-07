@@ -768,3 +768,32 @@ protocol 76.6–96.0%). (d) `review/appendix_rev5_m4_dsr.tex` (구현 세부 캡
 ### manifest 갱신
 
 5차 신규 CSV 3개 포함 `data/` 전 18개 파일로 manifest.json 재생성.
+
+## 심사 대응 5차 추가 — 마이크로 2건 (2026-07-07, 실행 기준 commit f1d7c5b)
+
+### 마이크로 1 — rev4_m4_t5_long.csv gaussian ref 60–360 백필
+
+`review/rev4_m4_t5_long.py`의 GAUSSIAN_ANN_REFERENCE에 60–360 4점 추가
+(`run_rev3_fig1.log` full-precision 출력에서 추출: 2.862282/1.839225/
+1.282012/1.041019) 후 NOISE=t5 재실행 — t5 값·기존 4점 bit-exact 게이트
+전부 불변, CSV 7행 완결. **max |diff| = 0.004675 (연율, n=540) ≤ 0.0047 —
+STOP 아님** (월간 최대는 0.0013). manifest.json 재생성.
+
+### 마이크로 2 — DSR alt-share sensitivity (`sim/run_R5c.py`, EXP_ID R5c=10)
+
+alt share ∈ {0.1, 0.25, 0.5}, λ_arr=1.0, (N=n_reg, empirical) 고정, 500런/셀.
+세계 구성이 달라 E5 CRN 재사용 불가 — 신규 seed [20260706, 10, share×100, run].
+
+| alt share | DSR alt power | √V 평균 | SR0 평균 (월간) |
+|---:|---:|---:|---:|
+| 0.10 | 6.612% | 0.186 | 0.517 |
+| 0.25 | 0.072% | 0.249 | 0.693 |
+| 0.50 | 0.004% | 0.283 | 0.789 |
+
+- **메커니즘 확정**: share가 낮을수록 횡단면 √V가 줄어 SR0가 참 alt SR
+  0.531 아래(0.517)까지 내려오고 power가 6.6%로 회복 — R5의 power 붕괴가
+  "참 alternative가 V를 오염시켜 문턱을 신호 위로 올리는" 구조임을 실측.
+  단 최선 케이스(share=0.1)에서도 protocol(96.0%) 대비 열 배 이상 낮음.
+- sanity 게이트 PASS: share=0.5가 R5 λ=1.0 (0.006%)과 같은 자릿수 (0.004%;
+  seed 계열이 달라 정확 일치는 기대하지 않음). `data/rev5_m4_dsr_altshare.csv`,
+  `run_simR5c.log`.

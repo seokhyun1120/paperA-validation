@@ -59,8 +59,8 @@
     },
     {
       "path": "paper_a_frontier/data/rev4_m4_t5_long.csv",
-      "sha256": "a1a4aed086adae8e61810674d7b3caf9a07d966ba2f981dd38f2b818995b138d",
-      "bytes": 448
+      "sha256": "285bdfe94c61e490e0579f5ac6768f1bbea6a92abe909c558904f74d4379652f",
+      "bytes": 565
     },
     {
       "path": "paper_a_frontier/data/rev4_m5_aj_sets.csv",
@@ -71,6 +71,11 @@
       "path": "paper_a_frontier/data/rev5_m1_full_adj.csv",
       "sha256": "d908f36506d91dd73ecd1a20dc858113c9fea9f50bb0b50858e9760b434bdd34",
       "bytes": 50673
+    },
+    {
+      "path": "paper_a_frontier/data/rev5_m4_dsr_altshare.csv",
+      "sha256": "2490839532e376208e4c96de39a7cf7495599fdf933cc8a3d1a4837fec7f6b0e",
+      "bytes": 374
     },
     {
       "path": "paper_a_frontier/data/rev5_m4_dsr_sensitivity.csv",
