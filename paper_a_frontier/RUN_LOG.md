@@ -611,3 +611,73 @@ SignalDoc `Cat.Economic`(Predictor 212개, 결측 0)으로 클러스터 정의(3
 - **manifest.json** (`review/make_manifest.py`, repo 루트): `data/` 전 12개 파일의
   full SHA-256 + bytes (비추적 원본 osap_LS_v200.csv.gz·SignalDoc.csv 포함 —
   다운로드 무결성 확인용). M8 appendix의 16-hex 3건과 대조 assert 통과.
+
+## 심사 대응 4차 — 3건 (2026-07-07, `review/rev4_*`, 실행 기준 commit 4be0a19)
+
+frontier.py 무수정, 기존 수치 전부 불변 (registered 재현 assert 통과). 실행 환경 동일.
+
+### 1. 4차 M1 — certified 6개 envelope-consistent 재검증 (`review/rev4_m1_envelope_adj.py`)
+
+3차 인증 6개 중 4개가 pre-pub mean(Y²) > 1.69 = 1.3² (stage4 확인:
+AnnouncementReturn 2.134, SmileSlope 1.959, AnalystRevision 1.939, STreversal
+1.788). 이 4개의 e-process를 envelope-consistent m_env_j = max(1.3, √meanY2_j)
+= 1.4607/1.3995/1.3925/1.3371로 재실행 (동일 Y·freeze·b_solo=4240), 적합 2개
+(EarningsSurprise 1.511, DivYieldST 1.503)와 193개는 registered 유지, adjusted
+값으로 e-BH 전면 재판정. 게이트: registered 199개 전량 1e-9 재현, 페널티 항등,
+baseline_reveal 대조 — 전부 통과.
+
+- **adjusted 인증 4/199 (k=4)**: AnalystRevision(logE_τ 8.51→8.69, solo 유지),
+  AnnouncementReturn(8.53→8.43, solo 유지), STreversal(8.59→8.40, solo 유지),
+  EarningsSurprise(불변). **solo 4개는 envelope 조정에 전부 강건.**
+- 탈락 2개:
+  - **SmileSlope**: ΔlogE_τ = −1.020 (7.558→6.538, γe 9.04→3.26) — 문턱 밖.
+    귀속: 커널 파라미터화상 λ_k = c_k/m_env라 페널티 항 0.5λ²m² = 0.5c²는
+    m_env 항등(수치 assert) → 감소분 전액이 φ(Y·λ)의 λ 축소분.
+  - **DivYieldST**: ΔlogE_τ = 0 (자신은 무조정, γe 3.699 그대로) — SmileSlope
+    탈락으로 k가 6→4로 내려가 문턱이 3.33→5.0으로 상승하는 **e-BH 연쇄 효과**로
+    탈락 (k=5도 실패: γe≥4.0인 팩터 4개뿐).
+- `appendix_rev3_m1.tex`에 열 추가 재생성 (meanY2_pre, m_env_consistent,
+  logE_tau_adj, gamma_e_adj, rejected_adj). `data/rev4_m1_envelope_adj.csv`(199행),
+  `run_rev4_m1.log`.
+
+### 2. 4차 M4 — t(5) 장기 frontier (`review/rev4_m4_t5_long.py`)
+
+NOISE=t5, N_SIM=10,000, SEED=0, M7 방식 rng 재현 (import 4점 RUN_LOG 게이트 +
+기존 4점 bit-exact assert 통과). Table 2 t5 열 3칸:
+
+| n (mo) | t5 δ* (월간) | t5 연율 | gaussian 연율 | 차이 |
+|---:|---:|---:|---:|---:|
+| 480 | 0.258525 | 0.8956 | 0.8952 | +0.0003 |
+| 540 | 0.242966 | 0.8417 | 0.8370 | +0.0047 |
+| 600 | 0.229113 | 0.7937 | 0.7919 | +0.0018 |
+
+→ 장기 3점에서도 t5-gaussian 차이 ≤ 0.005 (연율) — Stage 3의 "Catoni 검정력은
+사실상 처음 두 모멘트로 결정" robustness가 600개월까지 유지.
+`data/rev4_m4_t5_long.csv`, `run_rev4_m4.log`.
+
+### 3. 4차 m5 — A_j 관례 set-invariance (`review/rev4_m5_aj_sets.py`)
+
+세 관례(Year 1월초/7월초/연말 primary)에서 full-horizon survivor set과 fixed-H
+e-BH certified set을 집합 비교. frontier는 catoni 정확값 사용 (stage6 CSV는
+소수 3자리 반올림 상수 이력 — margin 최대차 0.0019, 비생존 최고 margin −0.033
+대비 한 자릿수 밖이라 판정 무영향, self-consistency 게이트는 PASS). v_min은
+관례별 pre-window로 재계산 (primary가 stage4와 1e-9 일치 assert). primary
+certified가 3차 6개와 일치 assert.
+
+- **survivor set: 세 관례 완전 동일** {AnalystRevision, AnnouncementReturn,
+  DivYieldST} → PASS.
+- **certified set: primary에서만 DivYieldST 추가** (1월초/7월초 = 5개
+  {AnalystRevision, AnnouncementReturn, EarningsSurprise, STreversal, SmileSlope},
+  primary = 6개). 원인: DivYieldST 자신의 동결 γe가 창 이동에 민감 —
+  1.576(1월초)/2.442(7월초)/3.699(연말)로 k=6 문턱 3.33을 연말에서만 통과.
+  나머지 5개는 전 관례에서 γe ≥ 4.0으로 인증 → **비불변은 DivYieldST 1개의
+  한계 인증(marginal certification) 문제이고 핵심 집합 5개는 불변**.
+- 4차 M1과 종합하면: **solo 4개(AnalystRevision, AnnouncementReturn, STreversal,
+  EarningsSurprise)는 envelope 조정·A_j 관례 양쪽에 강건**, SmileSlope는 관례
+  불변이나 envelope 조정에 탈락, DivYieldST는 양쪽 모두에서 한계적.
+  `data/rev4_m5_aj_sets.csv`, `run_rev4_m5.log`.
+
+### manifest 갱신
+
+4차 신규 CSV 3개 포함 `data/` 전 15개 파일로 manifest.json 재생성
+(M8 16-hex 대조 assert 재통과).
