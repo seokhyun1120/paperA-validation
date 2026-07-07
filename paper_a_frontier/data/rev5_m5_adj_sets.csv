@@ -1,0 +1,16 @@
+convention,convention_label,set_type,signalname,k_final,matured,n_m_env_adjusted
+year_jan,Year-01-01,certified_adj,AnalystRevision,4,201,10
+year_jan,Year-01-01,certified_adj,AnnouncementReturn,4,201,10
+year_jan,Year-01-01,certified_adj,EarningsSurprise,4,201,10
+year_jan,Year-01-01,certified_adj,STreversal,4,201,10
+year_jan,Year-01-01,summary,,4,201,10
+year_jul,Year-07-01,certified_adj,AnalystRevision,4,199,10
+year_jul,Year-07-01,certified_adj,AnnouncementReturn,4,199,10
+year_jul,Year-07-01,certified_adj,EarningsSurprise,4,199,10
+year_jul,Year-07-01,certified_adj,STreversal,4,199,10
+year_jul,Year-07-01,summary,,4,199,10
+primary,(Year+1)-01-01,certified_adj,AnalystRevision,4,199,11
+primary,(Year+1)-01-01,certified_adj,AnnouncementReturn,4,199,11
+primary,(Year+1)-01-01,certified_adj,EarningsSurprise,4,199,11
+primary,(Year+1)-01-01,certified_adj,STreversal,4,199,11
+primary,(Year+1)-01-01,summary,,4,199,11

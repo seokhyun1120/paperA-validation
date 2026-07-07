@@ -681,3 +681,90 @@ certified가 3차 6개와 일치 assert.
 
 4차 신규 CSV 3개 포함 `data/` 전 15개 파일로 manifest.json 재생성
 (M8 16-hex 대조 assert 재통과).
+
+## 심사 대응 5차 — 게이트·재료 5건 (2026-07-07, 실행 기준 commit f2719eb)
+
+frontier.py 무수정. 숫자 불일치·게이트 실패 시 STOP 규칙으로 실행 — **STOP 사유
+발생 0건** (아래 작업1의 partial 판정은 지시된 분기대로 full 재계산으로 처리).
+
+### 작업 1 — R8 F04b/F13 게이트: rev4 M1 검증 → full 재계산 (`review/rev5_m1_full_adj.py`)
+
+기존 `rev4_m1_envelope_adj.csv` 검증: (a) 199행·필수 컬럼 존재 PASS,
+(c) adjusted 인증 = 정확히 {AnalystRevision, AnnouncementReturn, STreversal,
+EarningsSurprise}, k 6→4, 문턱 3.33→5.0 PASS, (d) 승격 0건 PASS, (e) 커밋
+산출물과 일치 PASS. **(b) FAIL — partial 판정**: meanY2 > 1.69 팩터는 199개 중
+**11개**인데 재계산은 4차 지시 범위(인증 6개)의 4개뿐.
+
+→ 지시 분기대로 **199 전체 full 재계산** 실행: 전 팩터 m_env_j = max(1.3,
+√meanY2_j), 초과 11개(AnalystRevision, STreversal, AnnouncementReturn, REV6,
+ConsRecomm, DownRecomm, UpRecomm, ChangeInRecommendation, RIVolSpread,
+SmileSlope, OptionVolume2) 개별 재실행 후 e-BH 전면 재판정. 게이트 재검증:
+
+- **(c) adjusted 인증 = 동일 4개, k_199 = 4, final 문턱 γe 5.0 — PASS**
+- **(d) 승격 0건 — PASS** (추가 조정 7개는 전부 비인증 유지)
+- rev4 partial과의 정합: 인증 6개의 adjusted 값 1e-9 일치 — PASS
+- **원고 롤백 불필요** (partial과 full의 인증 결론 동일).
+  `data/rev5_m1_full_adj.csv`(rev4와 동일 스키마), `run_rev5_m1.log`.
+
+### 작업 2 — Min3 재료: 7점 Gaussian vs t(5) δ* (소수 4자리, 월간)
+
+출처: gaussian = 커밋 2d7834c 커널 SEED=0 (600-grid 재현 `run_rev3_fig1.log`),
+t5 = 커밋 4be0a19 실행 `rev4_m4_t5_long.csv` SEED=0.
+
+| n | 60 | 120 | 240 | 360 | 480 | 540 | 600 |
+|---|---|---|---|---|---|---|---|
+| Gaussian | 0.8263 | 0.5309 | 0.3701 | 0.3005 | 0.2584 | 0.2416 | 0.2286 |
+| t(5) | 0.8252 | 0.5315 | 0.3692 | 0.3001 | 0.2585 | 0.2430 | 0.2291 |
+
+**max|Gaussian − t5| = 0.0013 (월간) ≤ 0.005 확인.** 표 노트 초안: "Monthly
+δ* under t(5) noise differs from the Gaussian value by at most 0.0013 across
+all seven horizons (N_SIM = 10,000, SEED = 0); the Gaussian frontier is
+reported throughout."
+
+### 작업 3 — M4 재료: DSR comparator 구현 추출 + sensitivity (`sim/run_R5b.py`)
+
+(a) `sim/run_R5.py` 구현 그대로: SR_i = 전략의 post-등록 score 창
+[A_j+1, min(A_j+120, T−1)]의 월간 Sharpe (mean/sd ddof=1, n_i = 창 길이);
+skew/kurtosis = 같은 창의 population 모멘트; SR0 = √V·[(1−γ_EM)Φ⁻¹(1−1/N) +
+γ_EM·Φ⁻¹(1−1/(N·e))], V = 횡단면 Var(SR, ddof=1); terminal batch T=360;
+도착의 50%가 alternative (δ = δ*(120) 상수); n_i < 2 제외(기록); 발견 ⟺
+Φ(z) > 0.95.
+
+(b) sensitivity: N ∈ {n_reg, J=212, n_arrived("실제 tested variants 수" —
+예산 소진 후 거절된 도착 포함)} × {empirical, normal(γ3=0, γ4=3)} — E5 CRN
+재사용, 500런/셀:
+
+| λ_arr | N 정의 | empirical | normal |
+|---:|---|---:|---:|
+| 0.5 | n_reg / J=212 / n_arrived | 0.202% / 0.189% / 0.202% | 0.058% / 0.049% / 0.058% |
+| 1.0 | n_reg / J=212 / n_arrived | 0.006% / 0.006% / 0.002% | 0.004% / 0.004% / 0.000% |
+| 2.0 | n_reg / J=212 / n_arrived | 0.004% / 0.004% / 0.000% | 0.004% / 0.004% / 0.000% |
+
+(c) **게이트 PASS**: (n_reg, empirical)이 R5 표와 bit-동일 재현
+(91/44,992 = 0.2023%, 3/52,808, 2/52,689). 가드 발동 0회.
+→ **DSR power 붕괴는 N 정의·모멘트 처리 선택에 강건** (전 18셀 ≤ 0.202% vs
+protocol 76.6–96.0%). (d) `review/appendix_rev5_m4_dsr.tex` (구현 세부 캡션
+포함), `data/rev5_m4_dsr_sensitivity.csv`, `run_simR5b.log`.
+
+### 작업 4 — Min7 게이트: abandonment 0건 확인
+
+`rev3_m1_ebh_cert.csv` 점검: solo 미달 195개 전부 tau_months = 120 (데드라인
+동결), solo 4개는 전부 logE_τ ≥ 8.35 (경계 도달 동결). **τ < 120이면서 solo
+미달인 케이스 = 0건 — 실데이터 fixed-H run에 abandonment 이벤트 없음.**
+(프로토콜상 abandonment 경로 자체가 없는 설계이며 데이터로도 확인.) 보고만.
+
+### 작업 5 — Min4 강화: envelope-consistent set-invariance (`review/rev5_m5_adj_sets.py`)
+
+세 A_j 관례에서 관례별 pre-window로 meanY2까지 재계산(primary가 stage4와
+212개 1e-9 일치 assert)한 뒤 full envelope-consistent 조정 + e-BH 재판정:
+
+- **세 관례 모두 adjusted certified = {AnalystRevision, AnnouncementReturn,
+  EarningsSurprise, STreversal} (k=4) — adjusted core 4개 불변 PASS.**
+  primary는 작업 1의 full 재계산과 집합 일치 assert 통과.
+- registered에서 관례 민감했던 DivYieldST·SmileSlope가 adjusted에서는 세 관례
+  공통으로 탈락 → 4차 결론("강건한 core는 solo 4개") 재확인.
+  `data/rev5_m5_adj_sets.csv`, `run_rev5_m5.log`.
+
+### manifest 갱신
+
+5차 신규 CSV 3개 포함 `data/` 전 18개 파일로 manifest.json 재생성.
